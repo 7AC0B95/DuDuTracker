@@ -118,7 +118,7 @@ function addon:UpdateDetailView(dungeonName)
     -- Store current selection to refresh it if needed
     detailFrame.selectedDungeon = dungeonName
     
-    local data = addon.DungeonData[dungeonName]
+    local data = addon:GetDungeonDataByName(dungeonName)
     if not data then return end
     
     detailFrame.title:SetText(dungeonName)
@@ -248,8 +248,8 @@ function addon:UpdateDungeonList()
     
     -- Sort dungeons by level
     local sortedDungeons = {}
-    for name, data in pairs(addon.DungeonData) do
-        table.insert(sortedDungeons, {name = name, level = data.level or 0})
+    for id, data in pairs(addon.DungeonData) do
+        table.insert(sortedDungeons, {name = data.name, level = data.level or 0})
     end
     table.sort(sortedDungeons, function(a, b) return a.level < b.level end)
     
@@ -268,7 +268,7 @@ function addon:UpdateDungeonList()
         local isFullClear = false
         local hasKills = false
         
-        local data = addon.DungeonData[name]
+        local data = addon:GetDungeonDataByName(name)
         
         -- Scan history for Full Clear and Kills
         if DuoDungeonTrackerDB.history then

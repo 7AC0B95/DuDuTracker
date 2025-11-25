@@ -1,11 +1,11 @@
 local addonName, addon = ...
 
 -- Table of Vanilla WoW Dungeons
--- Key: Zone Name (GetRealZoneText)
--- Value: Table with ZoneID (optional/best guess), Level (for sorting), and Boss List
+-- Key: Instance ID (number)
+-- Value: Table with Name, Level, and Boss List
 addon.DungeonData = {
-    ["Ragefire Chasm"] = {
-        zoneID = 2437,
+    [389] = {
+        name = "Ragefire Chasm",
         level = 13,
         bosses = {
             "Oggleflint",
@@ -14,8 +14,8 @@ addon.DungeonData = {
             "Jergosh the Invoker"
         }
     },
-    ["Wailing Caverns"] = {
-        zoneID = 1417,
+    [43] = {
+        name = "Wailing Caverns",
         level = 17,
         bosses = {
             "Lady Anacondra",
@@ -28,8 +28,8 @@ addon.DungeonData = {
             "Kresh"
         }
     },
-    ["The Deadmines"] = {
-        zoneID = 1581,
+    [36] = {
+        name = "The Deadmines",
         level = 17,
         bosses = {
             "Rhahk'Zor",
@@ -41,8 +41,8 @@ addon.DungeonData = {
             "Edwin VanCleef"
         }
     },
-    ["Shadowfang Keep"] = {
-        zoneID = 1584,
+    [33] = {
+        name = "Shadowfang Keep",
         level = 22,
         bosses = {
             "Rethilgore",
@@ -55,8 +55,8 @@ addon.DungeonData = {
             "Archmage Arugal"
         }
     },
-    ["Blackfathom Deeps"] = {
-        zoneID = 1582,
+    [48] = {
+        name = "Blackfathom Deeps",
         level = 24,
         bosses = {
             "Ghamoo-ra",
@@ -68,8 +68,8 @@ addon.DungeonData = {
             "Aku'mai"
         }
     },
-    ["The Stockade"] = {
-        zoneID = 1583,
+    [34] = {
+        name = "The Stockade",
         level = 24,
         bosses = {
             "Targorr the Dread",
@@ -80,8 +80,8 @@ addon.DungeonData = {
             "Bruegal Ironknuckle"
         }
     },
-    ["Gnomeregan"] = {
-        zoneID = 1477,
+    [90] = {
+        name = "Gnomeregan",
         level = 29,
         bosses = {
             "Grubbis",
@@ -91,8 +91,8 @@ addon.DungeonData = {
             "Mekgineer Thermaplugg"
         }
     },
-    ["Razorfen Kraul"] = {
-        zoneID = 2437, -- Check ID
+    [47] = {
+        name = "Razorfen Kraul",
         level = 29,
         bosses = {
             "Roogug",
@@ -104,19 +104,8 @@ addon.DungeonData = {
             "Charlga Razorflank"
         }
     },
-    ["Razorfen Downs"] = {
-        zoneID = 1581, -- Check ID
-        level = 37,
-        bosses = {
-            "Tuten'kash",
-            "Mordresh Fire Eye",
-            "Glutton",
-            "Ragglesnout",
-            "Amnennar the Coldbringer"
-        }
-    },
-    ["Scarlet Monastery"] = {
-        zoneID = 1581, -- SM has 4 wings, usually detected as subzones or same map
+    [189] = {
+        name = "Scarlet Monastery",
         level = 30,
         bosses = {
             -- Graveyard
@@ -133,8 +122,19 @@ addon.DungeonData = {
             "High Priestess Whitemane"
         }
     },
-    ["Uldaman"] = {
-        zoneID = 1581,
+    [129] = {
+        name = "Razorfen Downs",
+        level = 37,
+        bosses = {
+            "Tuten'kash",
+            "Mordresh Fire Eye",
+            "Glutton",
+            "Ragglesnout",
+            "Amnennar the Coldbringer"
+        }
+    },
+    [70] = {
+        name = "Uldaman",
         level = 41,
         bosses = {
             "Revelosh",
@@ -145,8 +145,8 @@ addon.DungeonData = {
             "Archaedas"
         }
     },
-    ["Zul'Farrak"] = {
-        zoneID = 1581,
+    [209] = {
+        name = "Zul'Farrak",
         level = 44,
         bosses = {
             "Antu'sul",
@@ -158,8 +158,8 @@ addon.DungeonData = {
             "Gahz'rilla"
         }
     },
-    ["Maraudon"] = {
-        zoneID = 1581,
+    [349] = {
+        name = "Maraudon",
         level = 46,
         bosses = {
             "Noxxion",
@@ -172,8 +172,8 @@ addon.DungeonData = {
             "Princess Theradras"
         }
     },
-    ["Sunken Temple"] = {
-        zoneID = 1581,
+    [109] = {
+        name = "The Sunken Temple",
         level = 50,
         bosses = {
             "Atal'alarion",
@@ -187,8 +187,8 @@ addon.DungeonData = {
             "Shade of Eranikus"
         }
     },
-    ["Blackrock Depths"] = {
-        zoneID = 1581,
+    [230] = {
+        name = "Blackrock Depths",
         level = 52,
         bosses = {
             "High Interrogator Gerstahn",
@@ -206,80 +206,14 @@ addon.DungeonData = {
             "Ribbly Screwspigot",
             "Plugger Spazzring",
             "Ambassador Flamelash",
-            "The Seven", -- Special encounter
+            "The Seven",
             "Magmus",
             "Emperor Dagran Thaurissan",
             "Princess Moira Bronzebeard"
         }
     },
-    ["Lower Blackrock Spire"] = {
-        zoneID = 1581,
-        level = 55,
-        bosses = {
-            "Highlord Omokk",
-            "Shadow Hunter Vosh'gajin",
-            "War Master Voone",
-            "Mother Smolderweb",
-            "Urok Doomhowl",
-            "Quartermaster Zigris",
-            "Halycon",
-            "Gizrul the Slavener",
-            "Overlord Wyrmthalak"
-        }
-    },
-    ["Upper Blackrock Spire"] = {
-        zoneID = 1581,
-        level = 58,
-        bosses = {
-            "Pyroguard Emberseer",
-            "Solakar Flamewreath",
-            "Goraluk Anvilcrack",
-            "Jed Runewatcher",
-            "Gyth",
-            "Warchief Rend Blackhand",
-            "The Beast",
-            "General Drakkisath"
-        }
-    },
-    ["Scholomance"] = {
-        zoneID = 1581,
-        level = 58,
-        bosses = {
-            "Kirtonos the Herald",
-            "Jandice Barov",
-            "Rattlegore",
-            "Marduk Blackpool",
-            "Vectus",
-            "Ras Frostwhisper",
-            "Instructor Malicia",
-            "Doctor Theolen Krastinov",
-            "Lorekeeper Polkelt",
-            "The Ravenian",
-            "Lord Alexei Barov",
-            "Lady Illucia Barov",
-            "Darkmaster Gandling"
-        }
-    },
-    ["Stratholme"] = {
-        zoneID = 1581,
-        level = 58,
-        bosses = {
-            -- Undead
-            "Baroness Anastari",
-            "Nerub'enkan",
-            "Maleki the Pallid",
-            "Magistrate Barthilas",
-            "Ramstein the Gorger",
-            "Baron Rivendare",
-            -- Living
-            "Timmy the Cruel",
-            "Cannon Master Willey",
-            "Archivist Galford",
-            "Balnazzar"
-        }
-    },
-    ["Dire Maul"] = {
-        zoneID = 1581,
+    [429] = {
+        name = "Dire Maul",
         level = 55,
         bosses = {
             -- East
@@ -301,6 +235,68 @@ addon.DungeonData = {
             "Guard Slip'kik",
             "Captain Kromcrush",
             "King Gordok"
+        }
+    },
+    [229] = {
+        name = "Blackrock Spire",
+        level = 55,
+        bosses = {
+            -- LBRS
+            "Highlord Omokk",
+            "Shadow Hunter Vosh'gajin",
+            "War Master Voone",
+            "Mother Smolderweb",
+            "Urok Doomhowl",
+            "Quartermaster Zigris",
+            "Halycon",
+            "Gizrul the Slavener",
+            "Overlord Wyrmthalak",
+            -- UBRS
+            "Pyroguard Emberseer",
+            "Solakar Flamewreath",
+            "Goraluk Anvilcrack",
+            "Jed Runewatcher",
+            "Gyth",
+            "Warchief Rend Blackhand",
+            "The Beast",
+            "General Drakkisath"
+        }
+    },
+    [289] = {
+        name = "Scholomance",
+        level = 58,
+        bosses = {
+            "Kirtonos the Herald",
+            "Jandice Barov",
+            "Rattlegore",
+            "Marduk Blackpool",
+            "Vectus",
+            "Ras Frostwhisper",
+            "Instructor Malicia",
+            "Doctor Theolen Krastinov",
+            "Lorekeeper Polkelt",
+            "The Ravenian",
+            "Lord Alexei Barov",
+            "Lady Illucia Barov",
+            "Darkmaster Gandling"
+        }
+    },
+    [329] = {
+        name = "Stratholme",
+        level = 58,
+        bosses = {
+            -- Undead
+            "Baroness Anastari",
+            "Nerub'enkan",
+            "Maleki the Pallid",
+            "Magistrate Barthilas",
+            "Ramstein the Gorger",
+            "Baron Rivendare",
+            -- Living
+            "Timmy the Cruel",
+            "Cannon Master Willey",
+            "Archivist Galford",
+            "Balnazzar"
         }
     }
 }
