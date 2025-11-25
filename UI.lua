@@ -185,16 +185,13 @@ function addon:UpdateDetailView(dungeonName)
     -- This implies live feedback is important.
     
     if currentRunKills and next(currentRunKills) then
-        -- If we are currently running it and have killed something, it's a partial clear (unless we just finished it, 
-        -- but CompleteRun handles the final state. This is for the "during run" state).
-        -- We only override if it's NOT already "Cleared!" from a previous best run? 
-        -- Or maybe we should show "Partial Clear (Current)"?
-        -- The user asked for "Partial clear". Let's assume if they are IN a run, they want to see that status.
-        -- But if they have a previous Full Clear, downgrading the text might be confusing.
-        -- Let's stick to: If NOT Cleared, and has current kills -> Partial Clear.
-        
         if statusText ~= "|cFF00FF00Cleared!|r" then
              statusText = "|cFFFFFF00Partial clear|r"
+        end
+    elseif DuoDungeonTracker and DuoDungeonTracker.IsCurrentRun and DuoDungeonTracker:IsCurrentRun(dungeonName) then
+        -- Active run, 0 kills
+        if statusText ~= "|cFF00FF00Cleared!|r" and statusText ~= "|cFFFFFF00Partial clear!|r" then
+            statusText = "|cFF00CCFFStarted|r"
         end
     end
     
@@ -308,6 +305,8 @@ function addon:UpdateDungeonList()
             text:SetText("|cFF00FF00" .. name .. "|r") -- Green (Full Clear)
         elseif best or hasKills then
             text:SetText("|cFFFFFF00" .. name .. "|r") -- Yellow (Partial/Attempted)
+        elseif DuoDungeonTracker and DuoDungeonTracker.IsCurrentRun and DuoDungeonTracker:IsCurrentRun(name) then
+            text:SetText("|cFF00CCFF" .. name .. "|r") -- Light Blue (Started)
         else
             text:SetText("|cFF808080" .. name .. "|r") -- Grey (None)
         end
@@ -353,6 +352,9 @@ local function CreateMainWindow()
     
     CreateDungeonList(f)
     detailFrame = CreateDetailView(f)
+    
+    -- Enable ESC to close
+    tinsert(UISpecialFrames, f:GetName())
     
     return f
 end
