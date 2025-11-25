@@ -186,10 +186,7 @@ function addon:InitializeDB()
     
     -- Initialize UI elements that depend on DB
     if addon.CreateMinimapButton then
-        print("|cFF00FFFF[DuoDungeonTracker]|r Creating Minimap Button...")
         addon:CreateMinimapButton()
-    else
-        print("|cFFFF0000[DuoDungeonTracker]|r Error: CreateMinimapButton not found!")
     end
     
     print("|cFF00FF00DuoDungeonTracker|r Loaded. Ready to track! Type /ddt for commands.")

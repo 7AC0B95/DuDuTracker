@@ -201,9 +201,9 @@ function addon:UpdateDetailView(dungeonName)
     detailFrame.stats:SetText(
         "Status: " .. statusText .. "\n" ..
         "Best Time: " .. timeText .. "\n" ..
-        "Date: " .. dateText .. "\n" ..
         "Avg Level: " .. levelText .. "\n" ..
-        "Wipes (Best Run): " .. wipesText
+        "Wipes (Best Run): " .. wipesText .. "\n" ..
+        "Date: " .. dateText
     )
     
     -- Boss List
@@ -305,11 +305,11 @@ function addon:UpdateDungeonList()
         end
         
         if isFullClear then
-            text:SetText("|cFF00FF00" .. name .. " (" .. entry.level .. ")|r") -- Green (Full Clear)
+            text:SetText("|cFF00FF00" .. name .. "|r") -- Green (Full Clear)
         elseif best or hasKills then
-            text:SetText("|cFFFFFF00" .. name .. " (" .. entry.level .. ")|r") -- Yellow (Partial/Attempted)
+            text:SetText("|cFFFFFF00" .. name .. "|r") -- Yellow (Partial/Attempted)
         else
-            text:SetText("|cFF808080" .. name .. " (" .. entry.level .. ")|r") -- Grey (None)
+            text:SetText("|cFF808080" .. name .. "|r") -- Grey (None)
         end
         
         btn:SetScript("OnClick", function()
