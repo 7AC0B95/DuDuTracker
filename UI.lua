@@ -1,0 +1,378 @@
+local addonName, addon = ...
+
+-- UI Constants
+local WINDOW_WIDTH = 600
+local WINDOW_HEIGHT = 400
+local LIST_WIDTH = 200
+
+-- Main UI Frame
+local uiFrame = nil
+local detailFrame = nil
+local listContentFrame = nil
+
+-- --- Minimap Button ---
+-- --- Minimap Button ---
+-- --- Minimap Button ---
+function addon:CreateMinimapButton()
+    local mmBtn = CreateFrame("Button", "DuoDungeonTrackerMinimapButton", Minimap)
+    mmBtn:SetSize(32, 32)
+    mmBtn:SetFrameStrata("MEDIUM")
+    mmBtn:SetFrameLevel(8)
+    
+    -- Icon
+    local icon = mmBtn:CreateTexture(nil, "BACKGROUND")
+    icon:SetTexture("Interface\\Icons\\Inv_Misc_Map02")
+    icon:SetSize(20, 20)
+    icon:SetPoint("CENTER")
+    
+    -- Border
+    local border = mmBtn:CreateTexture(nil, "OVERLAY")
+    border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+    border:SetSize(54, 54)
+    border:SetPoint("TOPLEFT")
+    
+    -- Restore Position Logic (User Provided)
+    if DuoDungeonTrackerDB.minimapPos then
+        local pos = DuoDungeonTrackerDB.minimapPos
+        mmBtn:ClearAllPoints()
+        -- Restore relative to UIParent to allow free movement anywhere
+        mmBtn:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y)
+    else
+        -- Default position (near minimap)
+        mmBtn:SetPoint("TOPLEFT", Minimap, "TOPLEFT", 0, 0)
+    end
+    
+    -- Dragging Logic
+    mmBtn:SetMovable(true)
+    mmBtn:EnableMouse(true)
+    mmBtn:RegisterForDrag("LeftButton")
+    
+    mmBtn:SetScript("OnDragStart", function(self)
+        self:StartMoving()
+    end)
+    
+    mmBtn:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        local point, _, relativePoint, x, y = self:GetPoint()
+        
+        -- Save to DB
+        DuoDungeonTrackerDB.minimapPos = {
+            point = point,
+            relativePoint = relativePoint,
+            x = x,
+            y = y
+        }
+    end)
+    
+    -- Click
+    mmBtn:SetScript("OnClick", function()
+        addon:ToggleUI()
+    end)
+    
+    -- Tooltip
+    mmBtn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+        GameTooltip:SetText("Duo Dungeon Tracker")
+        GameTooltip:AddLine("Click to toggle main window", 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    mmBtn:SetScript("OnLeave", GameTooltip_Hide)
+end
+
+-- --- Main Window ---
+
+local function CreateDetailView(parent)
+    local f = CreateFrame("Frame", nil, parent)
+    -- Increased margin from LIST_WIDTH + 10 to LIST_WIDTH + 30
+    f:SetPoint("TOPLEFT", parent, "TOPLEFT", LIST_WIDTH + 30, -30)
+    f:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -10, 10)
+    
+    -- Title
+    f.title = f:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+    f.title:SetPoint("TOPLEFT", 0, 0)
+    f.title:SetText("Select a Dungeon")
+    
+    -- Stats Block
+    f.stats = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    f.stats:SetPoint("TOPLEFT", 0, -30)
+    f.stats:SetJustifyH("LEFT")
+    f.stats:SetText("")
+    
+    -- Boss List
+    f.bossListTitle = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    f.bossListTitle:SetPoint("TOPLEFT", 0, -120)
+    f.bossListTitle:SetText("Bosses:")
+    
+    f.bossList = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    f.bossList:SetPoint("TOPLEFT", 10, -140)
+    f.bossList:SetJustifyH("LEFT")
+    f.bossList:SetText("")
+    
+    return f
+end
+
+-- Made global to addon for real-time updates
+function addon:UpdateDetailView(dungeonName)
+    if not detailFrame or not dungeonName then return end
+    
+    -- Store current selection to refresh it if needed
+    detailFrame.selectedDungeon = dungeonName
+    
+    local data = addon.DungeonData[dungeonName]
+    if not data then return end
+    
+    detailFrame.title:SetText(dungeonName)
+    
+    -- Get Best Run info
+    local best = DuoDungeonTrackerDB.best[dungeonName]
+    local history = DuoDungeonTrackerDB.history
+    
+    -- Check if we have any history for this dungeon to determine "Attempted" status if not completed
+    local attempted = false
+    for _, run in ipairs(history) do
+        if run.dungeonName == dungeonName then
+            attempted = true
+            break
+        end
+    end
+    
+    local statusText = "|cFF808080Not Started|r"
+    local timeText = "N/A"
+    local dateText = "N/A"
+    local wipesText = "0"
+    local levelText = "N/A"
+    
+    if best then
+        -- Check for Full Clear
+        local allDead = true
+        if data.bosses and best.bossesKilled then
+            for _, bossName in ipairs(data.bosses) do
+                if not best.bossesKilled[bossName] then
+                    allDead = false
+                    break
+                end
+            end
+        elseif data.bosses and not best.bossesKilled then
+             -- Old data format or no kills recorded
+             allDead = false
+        end
+
+        if allDead then
+            statusText = "|cFF00FF00Cleared!|r"
+        else
+            statusText = "|cFFFFFF00Partial clear!|r"
+        end
+        
+        timeText = string.format("%.1f min", best.time / 60)
+        dateText = best.date
+        wipesText = best.wipes or 0
+        levelText = best.avgLevel and string.format("%.1f", best.avgLevel) or "N/A"
+    elseif attempted then
+        statusText = "|cFFFFFF00In Progress / Attempted|r"
+    end
+    
+    -- Check current run for live updates (Partial Clear)
+    local currentRunKills = {}
+    if DuoDungeonTracker and DuoDungeonTracker.GetCurrentRunKills then
+         currentRunKills = DuoDungeonTracker:GetCurrentRunKills(dungeonName) or {}
+    end
+    
+    -- If we have kills in the current run and we haven't already marked it as Cleared (from best run),
+    -- show Partial clear. Note: If best run is Cleared, we usually prefer showing that, 
+    -- but if the user wants to see "Partial clear" for the *current* run status, we might want to override.
+    -- However, usually "Status" refers to the dungeon's overall status or best status.
+    -- The request says: "As soon as any boss is killed, update live the status... to Yellow status: 'Partial clear'"
+    -- This implies live feedback is important.
+    
+    if currentRunKills and next(currentRunKills) then
+        -- If we are currently running it and have killed something, it's a partial clear (unless we just finished it, 
+        -- but CompleteRun handles the final state. This is for the "during run" state).
+        -- We only override if it's NOT already "Cleared!" from a previous best run? 
+        -- Or maybe we should show "Partial Clear (Current)"?
+        -- The user asked for "Partial clear". Let's assume if they are IN a run, they want to see that status.
+        -- But if they have a previous Full Clear, downgrading the text might be confusing.
+        -- Let's stick to: If NOT Cleared, and has current kills -> Partial Clear.
+        
+        if statusText ~= "|cFF00FF00Cleared!|r" then
+             statusText = "|cFFFFFF00Partial clear|r"
+        end
+    end
+    
+    detailFrame.stats:SetText(
+        "Status: " .. statusText .. "\n" ..
+        "Best Time: " .. timeText .. "\n" ..
+        "Date: " .. dateText .. "\n" ..
+        "Avg Level: " .. levelText .. "\n" ..
+        "Wipes (Best Run): " .. wipesText
+    )
+    
+    -- Boss List
+    local bossText = ""
+    
+    -- Check current run for live updates
+    local currentRunKills = {}
+    if DuoDungeonTracker and DuoDungeonTracker.GetCurrentRunKills then
+         currentRunKills = DuoDungeonTracker:GetCurrentRunKills(dungeonName) or {}
+    end
+
+    for _, bossName in ipairs(data.bosses) do
+        local color = "|cFF808080" -- Grey
+        local check = "[ ]"
+        
+        -- Check if killed in the BEST run (if completed) OR current run
+        local isKilledInBest = best and best.bossesKilled and best.bossesKilled[bossName]
+        local isKilledInCurrent = currentRunKills and currentRunKills[bossName]
+        
+        if isKilledInBest or isKilledInCurrent then
+             color = "|cFF00FF00" -- Green
+             check = "[x]"
+        end
+        
+        bossText = bossText .. color .. check .. " " .. bossName .. "|r\n"
+    end
+    
+    detailFrame.bossList:SetText(bossText)
+end
+
+function addon:UpdateDungeonList()
+    if not listContentFrame then return end
+    
+    -- Clear existing children (Simple way: Hide them and create new ones, or reuse. 
+    -- For simplicity in this small addon, we'll just release/hide all and recreate or update text if we kept references.
+    -- Let's just release all children to be safe and simple.)
+    local kids = {listContentFrame:GetChildren()}
+    for _, child in ipairs(kids) do
+        child:Hide()
+        child:SetParent(nil)
+    end
+    
+    -- Sort dungeons by level
+    local sortedDungeons = {}
+    for name, data in pairs(addon.DungeonData) do
+        table.insert(sortedDungeons, {name = name, level = data.level or 0})
+    end
+    table.sort(sortedDungeons, function(a, b) return a.level < b.level end)
+    
+    local yOffset = 0
+    for _, entry in ipairs(sortedDungeons) do
+        local name = entry.name
+        local btn = CreateFrame("Button", nil, listContentFrame)
+        btn:SetSize(LIST_WIDTH - 20, 20)
+        btn:SetPoint("TOPLEFT", 0, yOffset)
+        
+        local text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        text:SetPoint("LEFT", 5, 0)
+        
+        -- Determine Color
+        local best = DuoDungeonTrackerDB.best[name]
+        local isFullClear = false
+        local hasKills = false
+        
+        local data = addon.DungeonData[name]
+        
+        -- Scan history for Full Clear and Kills
+        if DuoDungeonTrackerDB.history then
+            for _, run in ipairs(DuoDungeonTrackerDB.history) do
+                if run.dungeonName == name then
+                    -- Check for any kills
+                    if run.bossesKilled and next(run.bossesKilled) then
+                        hasKills = true
+                    end
+                    
+                    -- Check for Full Clear
+                    if run.completed and data then
+                        local allDead = true
+                        for _, bossName in ipairs(data.bosses) do
+                            if not run.bossesKilled or not run.bossesKilled[bossName] then
+                                allDead = false
+                                break
+                            end
+                        end
+                        if allDead then
+                            isFullClear = true
+                        end
+                    end
+                end
+            end
+        end
+        
+        -- Check current run for kills (Real-time update)
+        if not isFullClear and not hasKills then
+            local currentKills = addon.GetCurrentRunKills and addon:GetCurrentRunKills(name)
+            if currentKills and next(currentKills) then
+                hasKills = true
+            end
+        end
+        
+        if isFullClear then
+            text:SetText("|cFF00FF00" .. name .. " (" .. entry.level .. ")|r") -- Green (Full Clear)
+        elseif best or hasKills then
+            text:SetText("|cFFFFFF00" .. name .. " (" .. entry.level .. ")|r") -- Yellow (Partial/Attempted)
+        else
+            text:SetText("|cFF808080" .. name .. " (" .. entry.level .. ")|r") -- Grey (None)
+        end
+        
+        btn:SetScript("OnClick", function()
+            addon:UpdateDetailView(name)
+        end)
+        
+        yOffset = yOffset - 20
+    end
+    
+    listContentFrame:SetHeight(-yOffset)
+end
+
+local function CreateDungeonList(parent)
+    -- Scroll Frame
+    local scrollFrame = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -30)
+    scrollFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMLEFT", LIST_WIDTH, 10)
+    
+    -- Content Frame
+    listContentFrame = CreateFrame("Frame", nil, scrollFrame)
+    listContentFrame:SetSize(LIST_WIDTH - 20, 800) -- Height will be adjusted dynamically
+    scrollFrame:SetScrollChild(listContentFrame)
+    
+    addon:UpdateDungeonList()
+end
+
+local function CreateMainWindow()
+    local f = CreateFrame("Frame", "DuoDungeonTrackerMainFrame", UIParent, "BasicFrameTemplateWithInset")
+    f:SetSize(WINDOW_WIDTH, WINDOW_HEIGHT)
+    f:SetPoint("CENTER")
+    f:SetMovable(true)
+    f:EnableMouse(true)
+    f:RegisterForDrag("LeftButton")
+    f:SetScript("OnDragStart", f.StartMoving)
+    f:SetScript("OnDragStop", f.StopMovingOrSizing)
+    f:Hide() -- Start hidden
+    
+    f.title = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    f.title:SetPoint("CENTER", f.TitleBg, "CENTER", 0, 0)
+    f.title:SetText("Jacob&Lau | Duo Dungeon Tracker")
+    
+    CreateDungeonList(f)
+    detailFrame = CreateDetailView(f)
+    
+    return f
+end
+
+function addon:ToggleUI()
+    if not uiFrame then
+        uiFrame = CreateMainWindow()
+    end
+    
+    if uiFrame:IsShown() then
+        uiFrame:Hide()
+    else
+        uiFrame:Show()
+    end
+end
+
+-- Initialize UI
+-- Moved to Core.lua InitializeDB to ensure correct order
+-- local frame = CreateFrame("Frame")
+-- frame:RegisterEvent("PLAYER_LOGIN")
+-- frame:SetScript("OnEvent", function()
+--     CreateMinimapButton()
+-- end)
