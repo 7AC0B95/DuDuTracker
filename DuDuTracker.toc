@@ -2,7 +2,7 @@
 ## Title: Duo Dungeon Tracker
 ## Notes: Tracks dungeon completions for a duo (Jacob & Lau).
 ## Author: Jacob&Lau
-## Version: 1.2
+## Version: 1.3
 ## SavedVariables: DuoDungeonTrackerDB
 
 Data.lua
