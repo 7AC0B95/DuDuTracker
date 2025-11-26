@@ -68,6 +68,26 @@ function addon:StopRun(reason)
     if not currentRun then return end
     local oldDungeonName = currentRun.dungeonName
     print("|cFF00FFFF[DuoDungeonTracker]|r Run ended: " .. reason)
+    
+    -- PARTIAL SAVE CHECK
+    currentRun.endTime = GetTime()
+    local duration = currentRun.endTime - currentRun.startTime
+    
+    -- Calculate boss count for check
+    local bossCount = 0
+    for _ in pairs(currentRun.bossesKilled) do 
+        bossCount = bossCount + 1 
+    end
+    
+    -- Save if we killed anything OR spent > 2 minutes inside
+    if bossCount > 0 or duration > 120 then
+        -- Mark as incomplete explicitly (though it should be false already)
+        currentRun.completed = false
+        addon:SaveRun(currentRun)
+    else
+        print("|cFF888888[DuoDungeonTracker]|r Run discarded (insufficient progress).|r")
+    end
+
     currentRun = nil
     
     -- Update UI to remove "Started" status
@@ -157,12 +177,15 @@ function addon:CheckZoneStatus()
         local _, _, _, _, _, _, _, instanceID = GetInstanceInfo()
         local data = addon.DungeonData[tonumber(instanceID)]
         
-        -- Debug Print
-        print("Debug: Found Dungeon ID " .. tostring(instanceID) .. " -> " .. (data and data.name or "N/A"))
+        -- Debug Print removed
+
         
         if (instanceType == "party") and data then
             -- We are in a tracked dungeon
             if addon:IsPartyValid() then
+                if currentRun and currentRun.isGhostRecovery then
+                    currentRun.isGhostRecovery = nil
+                end
                 addon:StartRun(data.name, data)
             else
                 if currentRun then
@@ -173,6 +196,15 @@ function addon:CheckZoneStatus()
     else
         -- Left instance
         if currentRun then
+            -- Check for Wipe Recovery (Ghost/Dead)
+            if UnitIsDeadOrGhost("player") then
+                if not currentRun.isGhostRecovery then
+                    print("|cFFFFFF00[DuoDungeonTracker]|r Player is a ghost. Waiting for return to dungeon...")
+                    currentRun.isGhostRecovery = true
+                end
+                return
+            end
+            
             addon:StopRun("Left instance")
         end
     end
@@ -249,22 +281,70 @@ function addon:SaveRun(runData)
     runData.bossLookup = nil
     runData.endBoss = nil
     
+    -- Calculate boss count for storage
+    local bossCount = 0
+    for _ in pairs(runData.bossesKilled) do 
+        bossCount = bossCount + 1 
+    end
+    runData.bossCount = bossCount
+    
     table.insert(DuoDungeonTrackerDB.history, runData)
     
-    -- Update Best Time
+    -- Update Best Time / Best Run Logic
     local duration = runData.endTime - runData.startTime
     local best = DuoDungeonTrackerDB.best[runData.dungeonName]
+    local isNewBest = false
     
-    if runData.completed then
-        if not best or duration < best.time then
-            DuoDungeonTrackerDB.best[runData.dungeonName] = {
-                time = duration,
-                date = runData.date,
-                wipes = runData.wipes,
-                avgLevel = runData.avgLevel,
-                bossesKilled = runData.bossesKilled
-            }
+    if not best then
+        -- Case 1: No existing best -> Save as best
+        isNewBest = true
+    else
+        -- We have an existing best run
+        local bestIsCompleted = best.completed
+        local newIsCompleted = runData.completed
+        
+        if newIsCompleted then
+            if not bestIsCompleted then
+                -- Case 2a: Completed overwrites Partial
+                isNewBest = true
+            else
+                -- Case 2b: Completed vs Completed -> Faster wins
+                if duration < best.time then
+                    isNewBest = true
+                end
+            end
+        else
+            -- New run is Partial
+            if not bestIsCompleted then
+                -- Case 3: Partial vs Partial -> More bosses wins
+                -- Ensure old best has a bossCount (legacy support)
+                local oldBossCount = best.bossCount or 0
+                if bossCount > oldBossCount then
+                    isNewBest = true
+                end
+            end
+            -- If best is Completed, we do nothing (Priority A)
+        end
+    end
+    
+    if isNewBest then
+        DuoDungeonTrackerDB.best[runData.dungeonName] = {
+            time = duration,
+            date = runData.date,
+            wipes = runData.wipes,
+            avgLevel = runData.avgLevel,
+            bossesKilled = runData.bossesKilled,
+            completed = runData.completed,
+            bossCount = bossCount
+        }
+        if runData.completed then
             print("|cFF00FF00New Record for " .. runData.dungeonName .. "!|r")
+        else
+            print("|cFFFFFF00New Best Attempt for " .. runData.dungeonName .. "! (" .. bossCount .. " bosses)|r")
+        end
+    else
+        if not runData.completed then
+             print("|cFF888888Partial run saved, but did not beat best attempt.|r")
         end
     end
     
