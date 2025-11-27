@@ -49,13 +49,20 @@ function addon:StartRun(dungeonName, dungeonData)
     
     currentRun = addon:CreateRunRecord(dungeonName)
     currentRun.dungeonData = dungeonData
-    -- Identify the "End Boss" (last one in the list)
+    -- Identify the "End Boss" (last one in the mandatory list)
     currentRun.endBoss = dungeonData.bosses[#dungeonData.bosses]
     
     -- Map boss names to boolean for easy lookup of "is this a boss?"
     currentRun.bossLookup = {}
+    -- Add Mandatory Bosses
     for _, bossName in ipairs(dungeonData.bosses) do
         currentRun.bossLookup[bossName] = true
+    end
+    -- Add Rare/Optional Bosses
+    if dungeonData.rares then
+        for _, bossName in ipairs(dungeonData.rares) do
+            currentRun.bossLookup[bossName] = true
+        end
     end
     
     -- Update UI immediately
@@ -152,8 +159,18 @@ function addon:RecordBossKill(bossName)
                 addon:UpdateDungeonList()
             end
             
-            -- Check for Completion
-            if bossName == currentRun.endBoss then
+            -- Check for Completion (ALL Mandatory Bosses must be dead)
+            local allMandatoryDead = true
+            if currentRun.dungeonData and currentRun.dungeonData.bosses then
+                for _, reqBoss in ipairs(currentRun.dungeonData.bosses) do
+                    if not currentRun.bossesKilled[reqBoss] then
+                        allMandatoryDead = false
+                        break
+                    end
+                end
+            end
+            
+            if allMandatoryDead then
                 addon:CompleteRun()
             end
         else

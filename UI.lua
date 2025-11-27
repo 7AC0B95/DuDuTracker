@@ -204,7 +204,7 @@ function addon:UpdateDetailView(dungeonName)
     )
     
     -- Boss List
-    local bossText = ""
+    local bossText = "|cFFFFD100Dungeon Bosses:|r\n"
     
     -- Check current run for live updates
     local currentRunKills = {}
@@ -212,20 +212,35 @@ function addon:UpdateDetailView(dungeonName)
          currentRunKills = DuoDungeonTracker:GetCurrentRunKills(dungeonName) or {}
     end
 
-    for _, bossName in ipairs(data.bosses) do
+    -- Helper to format boss line
+    local function GetBossLine(bName)
         local color = "|cFF808080" -- Grey
         local check = "[ ]"
         
         -- Check if killed in the BEST run (if completed) OR current run
-        local isKilledInBest = best and best.bossesKilled and best.bossesKilled[bossName]
-        local isKilledInCurrent = currentRunKills and currentRunKills[bossName]
+        local isKilledInBest = best and best.bossesKilled and best.bossesKilled[bName]
+        local isKilledInCurrent = currentRunKills and currentRunKills[bName]
         
         if isKilledInBest or isKilledInCurrent then
              color = "|cFF00FF00" -- Green
              check = "[x]"
         end
-        
-        bossText = bossText .. color .. check .. " " .. bossName .. "|r\n"
+        return color .. check .. " " .. bName .. "|r\n"
+    end
+
+    -- Mandatory Bosses
+    if data.bosses then
+        for _, bossName in ipairs(data.bosses) do
+            bossText = bossText .. GetBossLine(bossName)
+        end
+    end
+    
+    -- Rare Spawns
+    if data.rares and #data.rares > 0 then
+        bossText = bossText .. "\n|cFFFFD100Rare Spawns:|r\n"
+        for _, bossName in ipairs(data.rares) do
+            bossText = bossText .. GetBossLine(bossName)
+        end
     end
     
     detailFrame.bossList:SetText(bossText)

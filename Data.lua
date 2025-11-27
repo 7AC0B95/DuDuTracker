@@ -20,12 +20,15 @@ addon.DungeonData = {
         bosses = {
             "Lady Anacondra",
             "Lord Cobrahn",
+            "Kresh", -- Fixed spawn (roaming)
             "Lord Pythas",
+            "Skum", -- Fixed spawn (optional)
             "Lord Serpentis",
             "Verdan the Everliving",
-            "Mutanus the Devourer",
-            "Skum",
-            "Kresh"
+            "Mutanus the Devourer"
+        },
+        rares = {
+            "Deviate Faerie Dragon" -- True Rare
         }
     },
     [36] = {
@@ -39,6 +42,9 @@ addon.DungeonData = {
             "Cookie",
             "Captain Greenskin",
             "Edwin VanCleef"
+        },
+        rares = {
+            "Miner Johnson" -- True Rare
         }
     },
     [33] = {
@@ -53,6 +59,9 @@ addon.DungeonData = {
             "Fenrus the Devourer",
             "Wolf Master Nandos",
             "Archmage Arugal"
+        },
+        rares = {
+            "Deathsworn Captain" -- True Rare (Spawns on battlements)
         }
     },
     [48] = {
@@ -76,8 +85,10 @@ addon.DungeonData = {
             "Kam Deepfury",
             "Hamhock",
             "Bazil Thredd",
-            "Dextren Ward",
-            "Bruegal Ironknuckle"
+            "Dextren Ward"
+        },
+        rares = {
+            "Bruegal Ironknuckle" -- True Rare
         }
     },
     [90] = {
@@ -89,6 +100,9 @@ addon.DungeonData = {
             "Electrocutioner 6000",
             "Crowd Pummeler 9-60",
             "Mekgineer Thermaplugg"
+        },
+        rares = {
+            "Dark Iron Ambassador" -- True Rare
         }
     },
     [47] = {
@@ -100,26 +114,30 @@ addon.DungeonData = {
             "Death Speaker Jargba",
             "Overlord Ramtusk",
             "Agathelos the Raging",
-            "Blind Hunter",
             "Charlga Razorflank"
+        },
+        rares = {
+            "Blind Hunter", -- True Rare
+            "Earthcaller Halmgar" -- True Rare
         }
     },
     [189] = {
         name = "Scarlet Monastery",
         level = 30,
         bosses = {
-            -- Graveyard
             "Interrogator Vishas",
-            "Bloodmage Thalnos",
-            -- Library
+            "Bloodmage Thalnos", -- Graveyard End
             "Houndmaster Loksey",
-            "Arcanist Doan",
-            -- Armory
-            "Herod",
-            -- Cathedral
+            "Arcanist Doan", -- Library End
+            "Herod", -- Armory End
             "High Inquisitor Fairbanks",
             "Scarlet Commander Mograine",
-            "High Priestess Whitemane"
+            "High Priestess Whitemane" -- Cathedral End
+        },
+        rares = {
+            "Ironspine", -- Graveyard Rare
+            "Azshir the Sleepless", -- Graveyard Rare
+            "Fallen Champion" -- Graveyard Rare
         }
     },
     [129] = {
@@ -143,6 +161,9 @@ addon.DungeonData = {
             "Galgann Firehammer",
             "Grimlok",
             "Archaedas"
+        },
+        rares = {
+            "Digmaster Shovelphlange" -- Sometimes rare/moved in versions, usually fixed in Classic? Keeping as rare to be safe.
         }
     },
     [209] = {
@@ -156,6 +177,10 @@ addon.DungeonData = {
             "Shadowpriest Sezz'ziz",
             "Chief Ukorz Sandscalp",
             "Gahz'rilla"
+        },
+        rares = {
+            "Zerillis", -- True Rare
+            "Dustwraith" -- True Rare
         }
     },
     [349] = {
@@ -170,6 +195,9 @@ addon.DungeonData = {
             "Tinkerer Gizlock",
             "Rotgrip",
             "Princess Theradras"
+        },
+        rares = {
+            "Meshlok the Harvester" -- True Rare
         }
     },
     [109] = {
@@ -198,7 +226,7 @@ addon.DungeonData = {
             "Lord Incendius",
             "Warder Stilgiss",
             "Fineous Darkvire",
-            "Pyromancer Loregrain",
+            "Pyromancer Loregrain", -- Rare Elite classification, but 100% spawn if you go there.
             "General Angerforge",
             "Golem Lord Argelmach",
             "Hurley Blackbreath",
@@ -210,6 +238,9 @@ addon.DungeonData = {
             "Magmus",
             "Emperor Dagran Thaurissan",
             "Princess Moira Bronzebeard"
+        },
+        rares = {
+            "Panzor the Invincible" -- True Rare
         }
     },
     [429] = {
@@ -235,6 +266,10 @@ addon.DungeonData = {
             "Guard Slip'kik",
             "Captain Kromcrush",
             "King Gordok"
+        },
+        rares = {
+            "Mushgog", -- DM East Rare
+            "Tsu'zee" -- DM North Rare
         }
     },
     [229] = {
@@ -255,11 +290,16 @@ addon.DungeonData = {
             "Pyroguard Emberseer",
             "Solakar Flamewreath",
             "Goraluk Anvilcrack",
-            "Jed Runewatcher",
             "Gyth",
             "Warchief Rend Blackhand",
             "The Beast",
             "General Drakkisath"
+        },
+        rares = {
+            "Jed Runewatcher", -- True Rare (UBRS)
+            "Bannok Grimaxe", -- True Rare (LBRS)
+            "Crystal Fang", -- True Rare (LBRS)
+            "Spirestone Butcher" -- True Rare (LBRS)
         }
     },
     [289] = {
@@ -285,18 +325,21 @@ addon.DungeonData = {
         name = "Stratholme",
         level = 58,
         bosses = {
-            -- Undead
             "Baroness Anastari",
             "Nerub'enkan",
             "Maleki the Pallid",
             "Magistrate Barthilas",
             "Ramstein the Gorger",
             "Baron Rivendare",
-            -- Living
             "Timmy the Cruel",
             "Cannon Master Willey",
             "Archivist Galford",
             "Balnazzar"
+        },
+        rares = {
+            "Hearthsinger Forresten", -- True Rare (Live)
+            "Skul", -- True Rare (Live/Dead)
+            "Stonespine" -- True Rare (Dead)
         }
     }
 }
