@@ -11,8 +11,6 @@ local detailFrame = nil
 local listContentFrame = nil
 
 -- --- Minimap Button ---
--- --- Minimap Button ---
--- --- Minimap Button ---
 function addon:CreateMinimapButton()
     local mmBtn = CreateFrame("Button", "DuoDungeonTrackerMinimapButton", Minimap)
     mmBtn:SetSize(32, 32)
@@ -185,13 +183,6 @@ function addon:UpdateDetailView(dungeonName)
     if DuoDungeonTracker and DuoDungeonTracker.GetCurrentRunKills then
          currentRunKills = DuoDungeonTracker:GetCurrentRunKills(dungeonName) or {}
     end
-    
-    -- If we have kills in the current run and we haven't already marked it as Cleared (from best run),
-    -- show Partial clear. Note: If best run is Cleared, we usually prefer showing that, 
-    -- but if the user wants to see "Partial clear" for the *current* run status, we might want to override.
-    -- However, usually "Status" refers to the dungeon's overall status or best status.
-    -- The request says: "As soon as any boss is killed, update live the status... to Yellow status: 'Partial clear'"
-    -- This implies live feedback is important.
     
     if currentRunKills and next(currentRunKills) then
         if statusText ~= "|cFF00FF00Cleared!|r" then
