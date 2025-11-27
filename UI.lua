@@ -103,8 +103,17 @@ local function CreateDetailView(parent)
     f.bossListTitle:SetPoint("TOPLEFT", 0, -120)
     f.bossListTitle:SetText("Bosses:")
     
-    f.bossList = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    f.bossList:SetPoint("TOPLEFT", 10, -140)
+    -- Boss List Scroll Frame
+    f.bossScrollFrame = CreateFrame("ScrollFrame", nil, f, "UIPanelScrollFrameTemplate")
+    f.bossScrollFrame:SetPoint("TOPLEFT", f, "TOPLEFT", 0, -140)
+    f.bossScrollFrame:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -30, 10) -- Leave room for scrollbar
+    
+    f.bossContentFrame = CreateFrame("Frame", nil, f.bossScrollFrame)
+    f.bossContentFrame:SetSize(WINDOW_WIDTH - LIST_WIDTH - 60, 100) -- Width adjusted, Height dynamic
+    f.bossScrollFrame:SetScrollChild(f.bossContentFrame)
+    
+    f.bossList = f.bossContentFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    f.bossList:SetPoint("TOPLEFT", 10, 0)
     f.bossList:SetJustifyH("LEFT")
     f.bossList:SetText("")
     
@@ -229,6 +238,10 @@ function addon:UpdateDetailView(dungeonName)
     end
     
     detailFrame.bossList:SetText(bossText)
+    
+    -- Resize content frame to fit text
+    local height = detailFrame.bossList:GetStringHeight()
+    detailFrame.bossContentFrame:SetHeight(height + 20)
 end
 
 function addon:UpdateDungeonList()
