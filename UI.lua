@@ -397,7 +397,9 @@ local function CreateMainWindow()
     
     f.title = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     f.title:SetPoint("CENTER", f.TitleBg, "CENTER", 0, 0)
-    f.title:SetText("Jacob&Lau | Duo Dungeon Tracker")
+    
+    local version = C_AddOns.GetAddOnMetadata(addonName, "Version") or "1.0"
+    f.title:SetText("|cffC79C6EJacob|r|cffFFFFFF&|r|cffF58CBALau|r|cffFFFFFF's Duo Dungeon Tracker|r |cff808080(v" .. version .. ")|r")
     
     CreateDungeonList(f)
     detailFrame = CreateDetailView(f)
