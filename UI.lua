@@ -100,6 +100,25 @@ local function CreateDetailView(parent)
     f.bossListTitle = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     f.bossListTitle:SetPoint("TOPLEFT", 0, -120)
     f.bossListTitle:SetText("Bosses:")
+
+    -- Reset Button
+    f.resetBtn = CreateFrame("Button", "ResetDungeonButton", f, "UIPanelButtonTemplate")
+    f.resetBtn:SetSize(100, 22)
+    f.resetBtn:SetPoint("TOPRIGHT", -10, -10)
+    f.resetBtn:SetText("Reset Data")
+    f.resetBtn:SetScript("OnClick", function(self)
+        if self:GetText() == "Reset Data" then
+            self:SetText("Confirm?")
+        elseif self:GetText() == "Confirm?" then
+            if detailFrame.selectedDungeon then
+                addon:ResetDungeonData(detailFrame.selectedDungeon)
+            end
+            self:SetText("Reset Data")
+        end
+    end)
+    f.resetBtn:SetScript("OnHide", function(self)
+        self:SetText("Reset Data")
+    end)
     
     -- Boss List Scroll Frame
     f.bossScrollFrame = CreateFrame("ScrollFrame", nil, f, "UIPanelScrollFrameTemplate")
@@ -248,6 +267,17 @@ function addon:UpdateDetailView(dungeonName)
     -- Resize content frame to fit text
     local height = detailFrame.bossList:GetStringHeight()
     detailFrame.bossContentFrame:SetHeight(height + 20)
+
+    -- Update Reset Button Visibility
+    if detailFrame.resetBtn then
+        if best or attempted then
+            detailFrame.resetBtn:Show()
+            detailFrame.resetBtn:Enable()
+            detailFrame.resetBtn:SetText("Reset Data")
+        else
+            detailFrame.resetBtn:Hide()
+        end
+    end
 end
 
 function addon:UpdateDungeonList()

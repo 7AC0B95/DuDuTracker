@@ -370,6 +370,33 @@ function addon:SaveRun(runData)
     if addon.UpdateDetailView then addon:UpdateDetailView(runData.dungeonName) end
 end
 
+-- Reset data for a specific dungeon
+function addon:ResetDungeonData(dungeonName)
+    if not dungeonName then return end
+
+    -- 1. Clear Best Run
+    if DuoDungeonTrackerDB.best[dungeonName] then
+        DuoDungeonTrackerDB.best[dungeonName] = nil
+    end
+
+    -- 2. Clear History entries for this dungeon
+    -- Iterate backwards to safely remove items
+    if DuoDungeonTrackerDB.history then
+        for i = #DuoDungeonTrackerDB.history, 1, -1 do
+            local run = DuoDungeonTrackerDB.history[i]
+            if run.dungeonName == dungeonName then
+                table.remove(DuoDungeonTrackerDB.history, i)
+            end
+        end
+    end
+
+    print("|cFF00FF00[DuoDungeonTracker]|r Data reset for: " .. dungeonName)
+
+    -- 3. Update UI
+    if addon.UpdateDungeonList then addon:UpdateDungeonList() end
+    if addon.UpdateDetailView then addon:UpdateDetailView(dungeonName) end
+end
+
 -- --- Slash Commands ---
 SLASH_DUODUNGEONTRACKER1 = "/ddt"
 SLASH_DUODUNGEONTRACKER2 = "/duo"
