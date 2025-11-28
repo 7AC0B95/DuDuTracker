@@ -2,7 +2,7 @@ local addonName, addon = ...
 
 -- UI Constants
 local WINDOW_WIDTH = 600
-local WINDOW_HEIGHT = 400
+local WINDOW_HEIGHT = 450
 local LIST_WIDTH = 200
 
 -- Main UI Frame
@@ -119,6 +119,7 @@ local function CreateDetailView(parent)
     f.resetBtn:SetScript("OnHide", function(self)
         self:SetText("Reset Data")
     end)
+    f.resetBtn:Hide() -- Initial state hidden
     
     -- Boss List Scroll Frame
     f.bossScrollFrame = CreateFrame("ScrollFrame", nil, f, "UIPanelScrollFrameTemplate")
@@ -270,7 +271,11 @@ function addon:UpdateDetailView(dungeonName)
 
     -- Update Reset Button Visibility
     if detailFrame.resetBtn then
-        if best or attempted then
+        -- Safety Check: If no dungeon selected, strictly hide
+        if not dungeonName then
+            detailFrame.resetBtn:Hide()
+        -- Conditional Visibility: Only show if we have data (Best or Attempted)
+        elseif best or attempted then
             detailFrame.resetBtn:Show()
             detailFrame.resetBtn:Enable()
             detailFrame.resetBtn:SetText("Reset Data")
@@ -368,11 +373,25 @@ function addon:UpdateDungeonList()
     end
     
     listContentFrame:SetHeight(-yOffset)
+
+    -- Auto-hide ScrollBar if content fits
+    local scrollFrame = listContentFrame:GetParent()
+    if scrollFrame and scrollFrame.GetName then
+        local scrollBar = _G[scrollFrame:GetName() .. "ScrollBar"]
+        if scrollBar then
+            if listContentFrame:GetHeight() <= scrollFrame:GetHeight() then
+                scrollBar:Hide()
+                scrollBar:SetValue(0) -- Reset scroll
+            else
+                scrollBar:Show()
+            end
+        end
+    end
 end
 
 local function CreateDungeonList(parent)
     -- Scroll Frame
-    local scrollFrame = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
+    local scrollFrame = CreateFrame("ScrollFrame", "DuoDungeonTrackerListScrollFrame", parent, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -30)
     scrollFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMLEFT", LIST_WIDTH, 10)
     
@@ -400,6 +419,13 @@ local function CreateMainWindow()
     
     local version = C_AddOns.GetAddOnMetadata(addonName, "Version") or "1.0"
     f.title:SetText("|cffC79C6EJacob|r|cffFFFFFF&|r|cffF58CBALau|r|cffFFFFFF's Duo Dungeon Tracker|r |cff808080(v" .. version .. ")|r")
+    
+    -- Vertical Separator
+    f.separator = f:CreateTexture(nil, "ARTWORK")
+    f.separator:SetColorTexture(1, 1, 1, 0.2)
+    f.separator:SetWidth(1)
+    f.separator:SetPoint("TOPLEFT", f, "TOPLEFT", LIST_WIDTH + 5, -30)
+    f.separator:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", LIST_WIDTH + 5, 10)
     
     CreateDungeonList(f)
     detailFrame = CreateDetailView(f)
