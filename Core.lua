@@ -14,6 +14,7 @@ frame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 frame:RegisterEvent("PLAYER_DEAD")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+frame:RegisterEvent("PLAYER_LOGOUT")
 
 -- Helper: Get current dungeon data (By Instance ID)
 function addon:GetCurrentDungeonInfo()
@@ -45,9 +46,23 @@ end
 function addon:StartRun(dungeonName, dungeonData)
     if currentRun then return end -- Already tracking
     
-    print("|cFF00FFFF[DuoDungeonTracker]|r Starting run for: " .. dungeonName)
-    
-    currentRun = addon:CreateRunRecord(dungeonName)
+    -- CHECK FOR RESTORE
+    if DuoDungeonTrackerDB.savedSession and DuoDungeonTrackerDB.savedSession.dungeonName == dungeonName then
+        currentRun = DuoDungeonTrackerDB.savedSession
+        print("|cFF00FF00[DuoDungeonTracker]|r Session Restored!")
+        DuoDungeonTrackerDB.savedSession = nil -- Clear so we don't restore again
+    else
+        -- Normal Start
+        print("|cFF00FFFF[DuoDungeonTracker]|r Starting run for: " .. dungeonName)
+        currentRun = addon:CreateRunRecord(dungeonName)
+        
+        -- If we had a saved session but it didn't match, clear it
+        if DuoDungeonTrackerDB.savedSession then
+            DuoDungeonTrackerDB.savedSession = nil
+        end
+    end
+
+    -- RE-HYDRATE DATA (Common for both New and Restored)
     currentRun.dungeonData = dungeonData
     -- Identify the "End Boss" (last one in the mandatory list)
     currentRun.endBoss = dungeonData.bosses[#dungeonData.bosses]
@@ -77,8 +92,8 @@ function addon:StopRun(reason)
     print("|cFF00FFFF[DuoDungeonTracker]|r Run ended: " .. reason)
     
     -- PARTIAL SAVE CHECK
-    currentRun.endTime = GetTime()
-    local duration = currentRun.endTime - currentRun.startTime
+    currentRun.endTime = time()
+    local duration = difftime(currentRun.endTime, currentRun.startTime)
     
     -- Calculate boss count for check
     local bossCount = 0
@@ -96,6 +111,9 @@ function addon:StopRun(reason)
     end
 
     currentRun = nil
+    if DuoDungeonTrackerDB.savedSession then
+        DuoDungeonTrackerDB.savedSession = nil
+    end
     
     -- Update UI to remove "Started" status
     if addon.UpdateDungeonList then addon:UpdateDungeonList() end
@@ -107,7 +125,7 @@ function addon:CompleteRun()
     if not currentRun then return end
     
     currentRun.completed = true
-    currentRun.endTime = GetTime()
+    currentRun.endTime = time()
     
     -- Snapshot Levels
     local myLevel = UnitLevel("player")
@@ -124,9 +142,12 @@ function addon:CompleteRun()
     end
     
     addon:SaveRun(currentRun)
-    print("|cFF00FF00[DuoDungeonTracker]|r Dungeon Completed! Time: " .. string.format("%.1f", currentRun.endTime - currentRun.startTime) .. "s")
+    print("|cFF00FF00[DuoDungeonTracker]|r Dungeon Completed! Time: " .. string.format("%.1f", difftime(currentRun.endTime, currentRun.startTime)) .. "s")
     
     currentRun = nil
+    if DuoDungeonTrackerDB.savedSession then
+        DuoDungeonTrackerDB.savedSession = nil
+    end
 end
 
 -- Helper to get current run kills for UI
@@ -253,6 +274,25 @@ frame:SetScript("OnEvent", function(self, event, ...)
                 end
             end
         end
+
+        
+    elseif event == "PLAYER_LOGOUT" then
+        if currentRun then
+            -- Save session for persistence
+            -- We strip the transient data (dungeonData, bossLookup) before saving
+            -- But CreateRunRecord/SaveRun logic already keeps it clean or cleans it up
+            -- We need to make sure we don't save the heavy objects, but StartRun re-adds them.
+            
+            -- Prepare a clean copy to save
+            local sessionToSave = {}
+            for k, v in pairs(currentRun) do
+                if k ~= "dungeonData" and k ~= "bossLookup" and k ~= "endBoss" then
+                    sessionToSave[k] = v
+                end
+            end
+            
+            DuoDungeonTrackerDB.savedSession = sessionToSave
+        end
     end
 end)
 
@@ -280,7 +320,7 @@ end
 function addon:CreateRunRecord(dungeonName)
     return {
         dungeonName = dungeonName,
-        startTime = GetTime(),
+        startTime = time(),
         bossesKilled = {}, -- Table of [BossName] = true
         wipes = 0,
         deaths = 0, 
@@ -308,7 +348,7 @@ function addon:SaveRun(runData)
     table.insert(DuoDungeonTrackerDB.history, runData)
     
     -- Update Best Time / Best Run Logic
-    local duration = runData.endTime - runData.startTime
+    local duration = difftime(runData.endTime, runData.startTime)
     local best = DuoDungeonTrackerDB.best[runData.dungeonName]
     local isNewBest = false
     
@@ -416,7 +456,7 @@ SlashCmdList["DUODUNGEONTRACKER"] = function(msg)
         
     elseif cmd == "print" then
         if currentRun then
-            local timeElapsed = GetTime() - currentRun.startTime
+            local timeElapsed = difftime(time(), currentRun.startTime)
             local bossCount = 0
             for _ in pairs(currentRun.bossesKilled) do bossCount = bossCount + 1 end
             print(string.format("Current Run: %s | Time: %.1fs | Bosses: %d | Wipes: %d", 
