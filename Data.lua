@@ -2,16 +2,18 @@ local addonName, addon = ...
 
 -- Table of Vanilla WoW Dungeons
 -- Key: Instance ID (number)
--- Value: Table with Name, Level, and Boss List
+-- Value: Table with Name, Level, Boss List (Guaranteed), and Rares List (Rare Spawns)
 addon.DungeonData = {
     [389] = {
         name = "Ragefire Chasm",
         level = 13,
         bosses = {
-            "Oggleflint",
             "Taragaman the Hungerer",
             "Bazzalan",
             "Jergosh the Invoker"
+        },
+        rares = {
+            "Oggleflint" -- True Rare
         }
     },
     [43] = {
@@ -72,9 +74,12 @@ addon.DungeonData = {
             "Lady Sarevess",
             "Gelihast",
             "Lorgus Jett",
-            "Baron Aquanis",
+            "Old Serra'kis", -- Added (Guaranteed spawn)
             "Twilight Lord Kelris",
             "Aku'mai"
+        },
+        rares = {
+            "Baron Aquanis" -- From quest summoning (Rare Elite classification)
         }
     },
     [34] = {
@@ -148,6 +153,7 @@ addon.DungeonData = {
             "Mordresh Fire Eye",
             "Glutton",
             "Ragglesnout",
+            "Plaguemaw the Rotting", -- Added (Guaranteed)
             "Amnennar the Coldbringer"
         }
     },
@@ -158,12 +164,14 @@ addon.DungeonData = {
             "Revelosh",
             "Ironaya",
             "Obsidian Sentinel",
+            "Ancient Stone Keeper", -- Added (Guaranteed)
             "Galgann Firehammer",
             "Grimlok",
+            "Baelog", -- Added (Guaranteed)
             "Archaedas"
         },
         rares = {
-            "Digmaster Shovelphlange" -- Sometimes rare/moved in versions, usually fixed in Classic? Keeping as rare to be safe.
+            "Digmaster Shovelphlange" -- True Rare
         }
     },
     [209] = {
@@ -226,7 +234,6 @@ addon.DungeonData = {
             "Lord Incendius",
             "Warder Stilgiss",
             "Fineous Darkvire",
-            "Pyromancer Loregrain", -- Rare Elite classification, but 100% spawn if you go there.
             "General Angerforge",
             "Golem Lord Argelmach",
             "Hurley Blackbreath",
@@ -240,7 +247,8 @@ addon.DungeonData = {
             "Princess Moira Bronzebeard"
         },
         rares = {
-            "Panzor the Invincible" -- True Rare
+            "Panzor the Invincible", -- True Rare
+            "Pyromancer Loregrain" -- Moved to Rare (Rare Elite classification)
         }
     },
     [429] = {
@@ -269,6 +277,7 @@ addon.DungeonData = {
         },
         rares = {
             "Mushgog", -- DM East Rare
+            "Skarr the Unbroken", -- DM West Rare (Added)
             "Tsu'zee" -- DM North Rare
         }
     },
@@ -337,9 +346,10 @@ addon.DungeonData = {
             "Balnazzar"
         },
         rares = {
-            "Hearthsinger Forresten", -- True Rare (Live)
-            "Skul", -- True Rare (Live/Dead)
-            "Stonespine" -- True Rare (Dead)
+            "Hearthsinger Forresten", -- True Rare
+            "Skul", -- True Rare
+            "Stonespine", -- True Rare
+            "Ezra Grimm" -- True Rare (Added)
         }
     }
 }
