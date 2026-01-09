@@ -1,8 +1,8 @@
-## Interface: 11500
+## Interface: 11508
 ## Title: Duo Dungeon Tracker
 ## Notes: Tracks dungeon completions for a duo (Jacob & Lau).
 ## Author: Jacob&Lau
-## Version: 1.4
+## Version: 1.5
 ## SavedVariables: DuoDungeonTrackerDB
 
 Data.lua

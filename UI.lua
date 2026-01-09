@@ -81,7 +81,6 @@ end
 
 local function CreateDetailView(parent)
     local f = CreateFrame("Frame", nil, parent)
-    -- Increased margin from LIST_WIDTH + 10 to LIST_WIDTH + 30
     f:SetPoint("TOPLEFT", parent, "TOPLEFT", LIST_WIDTH + 30, -30)
     f:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -10, 10)
     
@@ -90,16 +89,25 @@ local function CreateDetailView(parent)
     f.title:SetPoint("TOPLEFT", 0, 0)
     f.title:SetText("Select a Dungeon")
     
+    -- Dungeon Completed Checkbox
+    f.completeBtn = CreateFrame("CheckButton", nil, f, "ChatConfigCheckButtonTemplate")
+    f.completeBtn:SetSize(24, 24)
+    f.completeBtn:SetPoint("TOPLEFT", 0, -25)
+    f.completeBtn.text = f.completeBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    f.completeBtn.text:SetPoint("LEFT", f.completeBtn, "RIGHT", 5, 0)
+    f.completeBtn.text:SetText("Dungeon Completed")
+    f.completeBtn:Hide()
+
     -- Stats Block
     f.stats = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    f.stats:SetPoint("TOPLEFT", 0, -30)
+    f.stats:SetPoint("TOPLEFT", 0, -55)
     f.stats:SetJustifyH("LEFT")
     f.stats:SetText("")
     
-    -- Boss List
+    -- Boss List Header
     f.bossListTitle = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     f.bossListTitle:SetPoint("TOPLEFT", 0, -120)
-    f.bossListTitle:SetText("Bosses:")
+    f.bossListTitle:SetText("Boss Checklist:")
 
     -- Reset Button
     f.resetBtn = CreateFrame("Button", "ResetDungeonButton", f, "UIPanelButtonTemplate")
@@ -116,33 +124,26 @@ local function CreateDetailView(parent)
             self:SetText("Reset Data")
         end
     end)
-    f.resetBtn:SetScript("OnHide", function(self)
-        self:SetText("Reset Data")
-    end)
-    f.resetBtn:Hide() -- Initial state hidden
-    
-    -- Boss List Scroll Frame
+    f.resetBtn:Hide()
+
+    -- Boss Scroll Frame
     f.bossScrollFrame = CreateFrame("ScrollFrame", nil, f, "UIPanelScrollFrameTemplate")
     f.bossScrollFrame:SetPoint("TOPLEFT", f, "TOPLEFT", 0, -140)
-    f.bossScrollFrame:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -30, 10) -- Leave room for scrollbar
-    
+    f.bossScrollFrame:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -30, 10)
+
     f.bossContentFrame = CreateFrame("Frame", nil, f.bossScrollFrame)
-    f.bossContentFrame:SetSize(WINDOW_WIDTH - LIST_WIDTH - 60, 100) -- Width adjusted, Height dynamic
+    f.bossContentFrame:SetSize(WINDOW_WIDTH - LIST_WIDTH - 60, 100)
     f.bossScrollFrame:SetScrollChild(f.bossContentFrame)
-    
-    f.bossList = f.bossContentFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    f.bossList:SetPoint("TOPLEFT", 10, 0)
-    f.bossList:SetJustifyH("LEFT")
-    f.bossList:SetText("")
-    
+
+    -- Checkbox Pool (Replaces the old text string)
+    f.bossCheckBoxes = {}
+
     return f
 end
 
 -- Made global to addon for real-time updates
 function addon:UpdateDetailView(dungeonName)
     if not detailFrame or not dungeonName then return end
-    
-    -- Store current selection to refresh it if needed
     detailFrame.selectedDungeon = dungeonName
     
     local data = addon:GetDungeonDataByName(dungeonName)
@@ -153,16 +154,9 @@ function addon:UpdateDetailView(dungeonName)
     -- Get Best Run info
     local best = DuoDungeonTrackerDB.best[dungeonName]
     local history = DuoDungeonTrackerDB.history
-    
-    -- Check if we have any history for this dungeon to determine "Attempted" status if not completed
     local attempted = false
-    for _, run in ipairs(history) do
-        if run.dungeonName == dungeonName then
-            attempted = true
-            break
-        end
-    end
     
+    -- Stats Logic
     local statusText = "|cFF808080Not Started|r"
     local timeText = "N/A"
     local dateText = "N/A"
@@ -170,115 +164,108 @@ function addon:UpdateDetailView(dungeonName)
     local levelText = "N/A"
     
     if best then
-        -- Check for Full Clear
-        local allDead = true
-        if data.bosses and best.bossesKilled then
-            for _, bossName in ipairs(data.bosses) do
-                if not best.bossesKilled[bossName] then
-                    allDead = false
-                    break
-                end
-            end
-        elseif data.bosses and not best.bossesKilled then
-             -- Old data format or no kills recorded
-             allDead = false
-        end
-
-        if allDead then
+        if best.completed then
             statusText = "|cFF00FF00Cleared!|r"
         else
             statusText = "|cFFFFFF00Partial clear!|r"
         end
-        
         timeText = string.format("%.1f min", best.time / 60)
         dateText = best.date
         wipesText = best.wipes or 0
         levelText = best.avgLevel and string.format("%.1f", best.avgLevel) or "N/A"
-    elseif attempted then
-        statusText = "|cFFFFFF00In Progress / Attempted|r"
-    end
-    
-    -- Check current run for live updates (Partial Clear)
-    local currentRunKills = {}
-    if DuoDungeonTracker and DuoDungeonTracker.GetCurrentRunKills then
-         currentRunKills = DuoDungeonTracker:GetCurrentRunKills(dungeonName) or {}
-    end
-    
-    if currentRunKills and next(currentRunKills) then
-        if statusText ~= "|cFF00FF00Cleared!|r" then
-             statusText = "|cFFFFFF00Partial clear|r"
-        end
-    elseif DuoDungeonTracker and DuoDungeonTracker.IsCurrentRun and DuoDungeonTracker:IsCurrentRun(dungeonName) then
-        -- Active run, 0 kills
-        if statusText ~= "|cFF00FF00Cleared!|r" and statusText ~= "|cFFFFFF00Partial clear!|r" then
-            statusText = "|cFF00CCFFStarted|r"
-        end
     end
     
     detailFrame.stats:SetText(
         "Status: " .. statusText .. "\n" ..
         "Best Time: " .. timeText .. "\n" ..
         "Avg Level: " .. levelText .. "\n" ..
-        "Wipes (Best Run): " .. wipesText .. "\n" ..
+        "Wipes: " .. wipesText .. "\n" ..
         "Date: " .. dateText
     )
-    
-    -- Boss List
-    local bossText = "|cFFFFD100Dungeon Bosses:|r\n"
-    
-    -- Check current run for live updates
+
+    -- Update Completion Checkbox
+    if detailFrame.completeBtn then
+        detailFrame.completeBtn:Show()
+        local isCompleted = best and best.completed
+        detailFrame.completeBtn:SetChecked(isCompleted)
+        detailFrame.completeBtn:SetScript("OnClick", function(self)
+             addon:ToggleDungeonCompletion(dungeonName, self:GetChecked())
+        end)
+    end
+
+    -- --- BOSS CHECKBOX LOGIC ---
+
+    -- Hide all existing checkboxes first
+    for _, btn in ipairs(detailFrame.bossCheckBoxes) do
+        btn:Hide()
+        btn:SetChecked(false)
+    end
+
     local currentRunKills = {}
-    if DuoDungeonTracker and DuoDungeonTracker.GetCurrentRunKills then
-         currentRunKills = DuoDungeonTracker:GetCurrentRunKills(dungeonName) or {}
+    if addon.GetCurrentRunKills then
+        currentRunKills = addon:GetCurrentRunKills(dungeonName) or {}
     end
 
-    -- Helper to format boss line
-    local function GetBossLine(bName)
-        local color = "|cFF808080" -- Grey
-        local check = "[ ]"
-        
-        -- Check if killed in the BEST run (if completed) OR current run
-        local isKilledInBest = best and best.bossesKilled and best.bossesKilled[bName]
-        local isKilledInCurrent = currentRunKills and currentRunKills[bName]
-        
-        if isKilledInBest or isKilledInCurrent then
-             color = "|cFF00FF00" -- Green
-             check = "[x]"
+    local yOffset = 0
+    local checkboxIndex = 1
+
+    -- Helper to create/retrieve checkbox
+    local function ConfigureCheckbox(bName, isRare)
+        local btn = detailFrame.bossCheckBoxes[checkboxIndex]
+        if not btn then
+            -- Create new if pool is empty
+            btn = CreateFrame("CheckButton", nil, detailFrame.bossContentFrame, "ChatConfigCheckButtonTemplate")
+            btn:SetSize(24, 24)
+            btn.text = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            btn.text:SetPoint("LEFT", btn, "RIGHT", 5, 0)
+            table.insert(detailFrame.bossCheckBoxes, btn)
         end
-        return color .. check .. " " .. bName .. "|r\n"
+
+        btn:ClearAllPoints()
+        btn:SetPoint("TOPLEFT", 10, yOffset)
+        btn:Show()
+
+        -- Logic: Is killed in Best Run OR Current Run?
+        local isKilled = (best and best.bossesKilled and best.bossesKilled[bName]) or currentRunKills[bName]
+        btn:SetChecked(isKilled)
+
+        -- Visuals
+        if isRare then
+            btn.text:SetText(bName .. " |cFF808080(Rare)|r")
+        else
+            btn.text:SetText(bName)
+        end
+
+        -- Interaction
+        btn:SetScript("OnClick", function(self)
+            local checked = self:GetChecked()
+            addon:ToggleBossKill(dungeonName, bName, checked)
+        end)
+
+        yOffset = yOffset - 25
+        checkboxIndex = checkboxIndex + 1
     end
 
-    -- Mandatory Bosses
+    -- Render Mandatory Bosses
     if data.bosses then
         for _, bossName in ipairs(data.bosses) do
-            bossText = bossText .. GetBossLine(bossName)
+            ConfigureCheckbox(bossName, false)
         end
     end
-    
-    -- Rare Spawns
-    if data.rares and #data.rares > 0 then
-        bossText = bossText .. "\n|cFFFFD100Rare Spawns:|r\n"
+    -- Render Rares
+    if data.rares then
+        yOffset = yOffset - 10 -- Spacer
         for _, bossName in ipairs(data.rares) do
-            bossText = bossText .. GetBossLine(bossName)
+            ConfigureCheckbox(bossName, true)
         end
     end
-    
-    detailFrame.bossList:SetText(bossText)
-    
-    -- Resize content frame to fit text
-    local height = detailFrame.bossList:GetStringHeight()
-    detailFrame.bossContentFrame:SetHeight(height + 20)
 
-    -- Update Reset Button Visibility
+    detailFrame.bossContentFrame:SetHeight(math.abs(yOffset) + 20)
+
+    -- Update Reset Button
     if detailFrame.resetBtn then
-        -- Safety Check: If no dungeon selected, strictly hide
-        if not dungeonName then
-            detailFrame.resetBtn:Hide()
-        -- Conditional Visibility: Only show if we have data (Best or Attempted)
-        elseif best or attempted then
+        if best or attempted then
             detailFrame.resetBtn:Show()
-            detailFrame.resetBtn:Enable()
-            detailFrame.resetBtn:SetText("Reset Data")
         else
             detailFrame.resetBtn:Hide()
         end
@@ -321,7 +308,12 @@ function addon:UpdateDungeonList()
         
         local data = addon:GetDungeonDataByName(name)
         
-        -- Scan history for Full Clear and Kills
+        -- Check Best Run Manual Completion (New Priority)
+        if best and best.completed then
+            isFullClear = true
+        end
+
+        -- Scan history for Full Clear and Kills (Legacy/Fallback)
         if DuoDungeonTrackerDB.history then
             for _, run in ipairs(DuoDungeonTrackerDB.history) do
                 if run.dungeonName == name then

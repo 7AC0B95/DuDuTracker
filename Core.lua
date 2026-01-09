@@ -16,12 +16,40 @@ frame:RegisterEvent("PLAYER_DEAD")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("PLAYER_LOGOUT")
 
+-- Helper: Resolve complex instances (like SM wings sharing one ID)
+function addon:ResolveComplexInstance(instanceID)
+    local zoneID = tonumber(instanceID)
+    
+    -- Scarlet Monastery (Map 189)
+    if zoneID == 189 then
+        local subZone = GetMinimapZoneText()
+        -- Check for keywords in the zone text
+        if subZone == "Graveyard" or subZone:find("Graveyard") then return 1891 end
+        if subZone == "Library" or subZone:find("Library") then return 1892 end
+        if subZone == "Armory" or subZone:find("Armory") then return 1893 end
+        if subZone == "Cathedral" or subZone:find("Cathedral") then return 1894 end
+        
+        -- Fallback: If we just entered and text isn't ready, 
+        -- we might need to rely on the user or wait for an update.
+        -- For now, return nil to avoid tracking the "Lobby"
+        return nil 
+    end
+    
+    return zoneID
+end
+
 -- Helper: Get current dungeon data (By Instance ID)
 function addon:GetCurrentDungeonInfo()
-    local _, _, _, _, _, _, _, zoneID = GetInstanceInfo()
-    local data = addon.DungeonData[tonumber(zoneID)]
-    if data then
-        return data.name, data
+    local _, _, _, _, _, _, _, rawID = GetInstanceInfo()
+    
+    -- Try to resolve specific wing ID
+    local resolvedID = addon:ResolveComplexInstance(rawID)
+    
+    if resolvedID then
+        local data = addon.DungeonData[resolvedID]
+        if data then
+            return data.name, data
+        end
     end
     return nil, nil
 end
@@ -213,7 +241,8 @@ function addon:CheckZoneStatus()
     
     if inInstance then
         local _, _, _, _, _, _, _, instanceID = GetInstanceInfo()
-        local data = addon.DungeonData[tonumber(instanceID)]
+        local resolvedID = addon:ResolveComplexInstance(instanceID)
+        local data = addon.DungeonData[resolvedID]
         
         -- Debug Print removed
 
@@ -409,6 +438,80 @@ function addon:SaveRun(runData)
     if addon.UpdateDungeonList then addon:UpdateDungeonList() end
     if addon.UpdateDetailView then addon:UpdateDetailView(runData.dungeonName) end
 end
+
+-- Toggle Boss Kill (Manual Override)
+-- Updates both Active Run (if matches) and DB Best Run (history correction)
+function addon:ToggleBossKill(dungeonName, bossName, isKilled)
+    -- 1. Update Active Run
+    if currentRun and currentRun.dungeonName == dungeonName then
+        if isKilled then
+            currentRun.bossesKilled[bossName] = true
+        else
+            currentRun.bossesKilled[bossName] = nil
+        end
+        -- Check completion logic is handled by UI/Verification, but we could re-run it here if needed.
+        -- For manual edits, we usually trust the user or let them toggle completion separately.
+    end
+
+    -- 2. Update DB Best Run (Persistence)
+    -- If no best run exists, create a dummy one to store this kill info
+    if not DuoDungeonTrackerDB.best[dungeonName] then
+        DuoDungeonTrackerDB.best[dungeonName] = {
+            time = 0,
+            date = date("%Y-%m-%d %H:%M:%S"),
+            wipes = 0,
+            avgLevel = UnitLevel("player"), -- Rough guess
+            bossesKilled = {},
+            completed = false,
+            bossCount = 0
+        }
+    end
+
+    local best = DuoDungeonTrackerDB.best[dungeonName]
+    if isKilled then
+        best.bossesKilled[bossName] = true
+    else
+        best.bossesKilled[bossName] = nil
+    end
+
+    -- Recalc boss count for DB
+    local count = 0
+    for _ in pairs(best.bossesKilled) do count = count + 1 end
+    best.bossCount = count
+
+    -- 3. Trigger UI Update
+    if addon.UpdateDetailView then addon:UpdateDetailView(dungeonName) end
+    if addon.UpdateDungeonList then addon:UpdateDungeonList() end
+end
+
+-- Toggle Dungeon Completion (Manual Override)
+function addon:ToggleDungeonCompletion(dungeonName, isCompleted)
+    -- 1. Update Active Run
+    if currentRun and currentRun.dungeonName == dungeonName then
+        currentRun.completed = isCompleted
+    end
+
+    -- 2. Update DB Best Run
+    if not DuoDungeonTrackerDB.best[dungeonName] then
+        DuoDungeonTrackerDB.best[dungeonName] = {
+            time = 0,
+            date = date("%Y-%m-%d %H:%M:%S"),
+            wipes = 0,
+            avgLevel = UnitLevel("player"),
+            bossesKilled = {},
+            completed = false,
+            bossCount = 0
+        }
+    end
+
+    local best = DuoDungeonTrackerDB.best[dungeonName]
+    best.completed = isCompleted
+
+    -- 3. Trigger UI Update
+    if addon.UpdateDetailView then addon:UpdateDetailView(dungeonName) end
+    if addon.UpdateDungeonList then addon:UpdateDungeonList() end
+end
+
 
 -- Reset data for a specific dungeon
 function addon:ResetDungeonData(dungeonName)

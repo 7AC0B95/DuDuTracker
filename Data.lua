@@ -126,23 +126,45 @@ addon.DungeonData = {
             "Earthcaller Halmgar" -- True Rare
         }
     },
-    [189] = {
-        name = "Scarlet Monastery",
+    -- Scarlet Monastery: Graveyard
+    [1891] = {
+        name = "SM: Graveyard",
         level = 30,
         bosses = {
             "Interrogator Vishas",
-            "Bloodmage Thalnos", -- Graveyard End
-            "Houndmaster Loksey",
-            "Arcanist Doan", -- Library End
-            "Herod", -- Armory End
-            "High Inquisitor Fairbanks",
-            "Scarlet Commander Mograine",
-            "High Priestess Whitemane" -- Cathedral End
+            "Bloodmage Thalnos"
         },
         rares = {
-            "Ironspine", -- Graveyard Rare
-            "Azshir the Sleepless", -- Graveyard Rare
-            "Fallen Champion" -- Graveyard Rare
+            "Ironspine",
+            "Azshir the Sleepless",
+            "Fallen Champion"
+        }
+    },
+    -- Scarlet Monastery: Library
+    [1892] = {
+        name = "SM: Library",
+        level = 32,
+        bosses = {
+            "Houndmaster Loksey",
+            "Arcanist Doan"
+        }
+    },
+    -- Scarlet Monastery: Armory
+    [1893] = {
+        name = "SM: Armory",
+        level = 34,
+        bosses = {
+            "Herod"
+        }
+    },
+    -- Scarlet Monastery: Cathedral
+    [1894] = {
+        name = "SM: Cathedral",
+        level = 36,
+        bosses = {
+            "High Inquisitor Fairbanks",
+            "Scarlet Commander Mograine",
+            "High Priestess Whitemane"
         }
     },
     [129] = {
